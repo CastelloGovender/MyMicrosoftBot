@@ -34,18 +34,28 @@ namespace EchoBot1
                 ConfirmStepAsync,
                 SummaryStepAsync,
             };
-            var loopSteps = new WaterfallStep[]
-            {
-                EchoStepAsync
-            };
 
             // Add named dialogs to the DialogSet. These names are saved in the dialog state.
-            _dialogs.Add(new WaterfallDialog("echoSteps", loopSteps));
-            _dialogs.Add(new TextPrompt("echo"));
-            _dialogs.Add(new WaterfallDialog("details", waterfallSteps));
-            _dialogs.Add(new TextPrompt("name"));
-            _dialogs.Add(new NumberPrompt<int>("age"));
-            _dialogs.Add(new ConfirmPrompt("confirm"));
+            _dialogs
+                .Add(new TextPrompt("echo"))
+                .Add(new TextPrompt("name"))
+                .Add(new NumberPrompt<int>("age"))
+                .Add(new ConfirmPrompt("confirm"));
+
+            //Root Dialog Flow
+            _dialogs.Add(new WaterfallDialog("rootDialog")
+                .AddStep(EchoStepAsync)
+                );
+
+            //Get User Details Dialog  Flow
+            _dialogs.Add(new WaterfallDialog("getDetailsDialog")
+                .AddStep(NameStepAsync)
+                .AddStep(NameConfirmStepAsync)
+                .AddStep(AgeStepAsync)
+                .AddStep(ConfirmStepAsync)
+                .AddStep(SummaryStepAsync)
+                );
+            
 
             _logger = loggerFactory.CreateLogger<EchoBot1Bot>();
             _logger.LogTrace("Turn start.");
@@ -66,7 +76,14 @@ namespace EchoBot1
                 // If the DialogTurnStatus is Empty we should start a new dialog.
                 if (results.Status == DialogTurnStatus.Empty)
                 {
-                    await dialogContext.BeginDialogAsync("details", null, cancellationToken);
+                    if (turnContext.Activity.Text.Equals("Hallo"))
+                    {
+                        await dialogContext.BeginDialogAsync("getDetailsDialog", null, cancellationToken);
+                    }
+                    else
+                    {
+                        await dialogContext.Context.SendActivityAsync(MessageFactory.Text($"You said {turnContext.Activity.Text}."), cancellationToken);
+                    }
                 }
             }
             else if (turnContext.Activity.Type == ActivityTypes.ConversationUpdate)
@@ -100,10 +117,15 @@ namespace EchoBot1
             }
         }
 
-        private static async Task<DialogTurnResult> EchoStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        private async Task<DialogTurnResult> EchoStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            await stepContext.Context.SendActivityAsync(MessageFactory.Text($"You said {stepContext.Result}"), cancellationToken);
-            return await stepContext.PromptAsync("echo", new PromptOptions { Prompt = MessageFactory.Text("Wanna say something else?") }, cancellationToken);
+            //var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
+
+            //// Update the profile.
+            //userProfile.RandomText = (string)stepContext.Result;
+            return await stepContext.PromptAsync("echo", new PromptOptions { Prompt = MessageFactory.Text("You said") }, cancellationToken);
+            //await stepContext.Context.SendActivityAsync(MessageFactory.Text($"You said {stepContext.Result}"), cancellationToken);
+            // return await stepContext.PromptAsync("echo", new PromptOptions { Prompt = MessageFactory.Text($"You said {userProfile.RandomText}") }, cancellationToken);
         }
 
         private static async Task<DialogTurnResult> NameStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
