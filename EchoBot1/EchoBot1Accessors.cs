@@ -3,6 +3,7 @@
 
 using System;
 using Microsoft.Bot.Builder;
+using Microsoft.Bot.Builder.Dialogs;
 
 namespace EchoBot1
 {
@@ -14,14 +15,20 @@ namespace EchoBot1
     /// </summary>
     public class EchoBot1Accessors
     {
+        //public EchoBot1Accessors(ConversationState conversationState)
+        //{
+        //    ConversationState = conversationState;
+        //}
+
         /// <summary>
         /// Initializes a new instance of the class.
         /// Contains the <see cref="ConversationState"/> and associated <see cref="IStatePropertyAccessor{T}"/>.
         /// </summary>
         /// <param name="conversationState">The state object that stores the counter.</param>
-        public EchoBot1Accessors(ConversationState conversationState)
+        public EchoBot1Accessors(ConversationState conversationState, UserState userState)
         {
             ConversationState = conversationState ?? throw new ArgumentNullException(nameof(conversationState));
+            userState = userState ?? throw new ArgumentException(nameof(userState));
         }
 
         /// <summary>
@@ -37,12 +44,14 @@ namespace EchoBot1
         /// <value>
         /// The accessor stores the turn count for the conversation.
         /// </value>
-        public IStatePropertyAccessor<CounterState> CounterState { get; set; }
-
+        //public IStatePropertyAccessor<CounterState> CounterState { get; set; }
+        public IStatePropertyAccessor<DialogState> ConversationDialogState { get; set; }
+        public IStatePropertyAccessor<UserProfile> UserProfile { get; set; }
         /// <summary>
         /// Gets the <see cref="ConversationState"/> object for the conversation.
         /// </summary>
         /// <value>The <see cref="ConversationState"/> object.</value>
         public ConversationState ConversationState { get; }
+        public UserState UserState { get; }
     }
 }
