@@ -139,9 +139,7 @@ namespace EchoBot1
             var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
             var resolution = (stepContext.Result as IList<DateTimeResolution>)?.FirstOrDefault();
             DateTime date = Convert.ToDateTime(resolution.Value ?? resolution.Timex);
-            //date = date.Date;
             userProfile.Birthdate = date;
-            //userProfile.Birthdate = userProfile.Birthdate.Date;
 
             // We can send messages to the user at any point in the WaterfallStep.
             if (userProfile.Birthdate == null)
