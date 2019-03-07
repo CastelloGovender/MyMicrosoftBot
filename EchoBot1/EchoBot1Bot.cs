@@ -9,6 +9,8 @@ using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace EchoBot1
 {
@@ -37,7 +39,7 @@ namespace EchoBot1
             _dialogs
                 .Add(new TextPrompt("echo"))
                 .Add(new TextPrompt("name"))
-                .Add(new TextPrompt("age"))
+                .Add(new DateTimePrompt("age"))
                 .Add(new ConfirmPrompt("confirm"));
 
             //Root Dialog Flow
@@ -135,7 +137,11 @@ namespace EchoBot1
         private async Task<DialogTurnResult> SummaryStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
-            userProfile.Birthdate = (string)stepContext.Result;
+            //userProfile.Birthdate = userProfile.Birthdate.Where(string.Format("{0} > @0", stepContext.Result),DateTime.Parse(userProfile.Birthdate));
+            var resolution = (stepContext.Result as IList<DateTimeResolution>)?.FirstOrDefault();
+            DateTime date = Convert.ToDateTime(resolution.Value ?? resolution.Timex);
+            userProfile.Birthdate = date.Date;
+
             // We can send messages to the user at any point in the WaterfallStep.
             if (userProfile.Birthdate == null)
             {
