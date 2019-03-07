@@ -137,10 +137,11 @@ namespace EchoBot1
         private async Task<DialogTurnResult> SummaryStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
-            //userProfile.Birthdate = userProfile.Birthdate.Where(string.Format("{0} > @0", stepContext.Result),DateTime.Parse(userProfile.Birthdate));
             var resolution = (stepContext.Result as IList<DateTimeResolution>)?.FirstOrDefault();
             DateTime date = Convert.ToDateTime(resolution.Value ?? resolution.Timex);
-            userProfile.Birthdate = date.Date;
+            //date = date.Date;
+            userProfile.Birthdate = date;
+            //userProfile.Birthdate = userProfile.Birthdate.Date;
 
             // We can send messages to the user at any point in the WaterfallStep.
             if (userProfile.Birthdate == null)
@@ -149,7 +150,7 @@ namespace EchoBot1
             }
             else
             {
-               await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Hi {userProfile.Name}, so you were born on {userProfile.Birthdate}."), cancellationToken);
+               await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Hi {userProfile.Name}, so you were born on {userProfile.Birthdate.ToString("dd/MM/yyyy")}."), cancellationToken);
             }
 
             // WaterfallStep always finishes with the end of the Waterfall or with another dialog, here it is the end.
