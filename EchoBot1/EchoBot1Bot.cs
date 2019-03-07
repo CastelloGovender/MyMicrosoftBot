@@ -31,7 +31,7 @@ namespace EchoBot1
             var waterfallSteps = new WaterfallStep[]
             {
                 NameStepAsync,
-                AgeStepAsync,
+                BirthdateStepAsync,
                 SummaryStepAsync,
             };
 
@@ -39,7 +39,7 @@ namespace EchoBot1
             _dialogs
                 .Add(new TextPrompt("echo"))
                 .Add(new TextPrompt("name"))
-                .Add(new DateTimePrompt("age"))
+                .Add(new DateTimePrompt("birthdate"))
                 .Add(new ConfirmPrompt("confirm"));
 
             //Root Dialog Flow
@@ -50,7 +50,7 @@ namespace EchoBot1
             //Get User Details Dialog  Flow
             _dialogs.Add(new WaterfallDialog("getDetailsDialog")
                 .AddStep(NameStepAsync)
-                .AddStep(AgeStepAsync)
+                .AddStep(BirthdateStepAsync)
                 .AddStep(SummaryStepAsync)
                 );
             
@@ -125,13 +125,13 @@ namespace EchoBot1
             return await stepContext.PromptAsync("name", new PromptOptions { Prompt = MessageFactory.Text("Hi my name is Baby bot, What is your name?") }, cancellationToken);
         }
 
-        private async Task<DialogTurnResult> AgeStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        private async Task<DialogTurnResult> BirthdateStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             // Get the current profile object from user state.
             var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
             userProfile.Name = (string)stepContext.Result;
             // WaterfallStep always finishes with the end of the Waterfall or with another dialog, here it is a Prompt Dialog.
-            return await stepContext.PromptAsync("age", new PromptOptions { Prompt = MessageFactory.Text("Please enter your birthdate.") }, cancellationToken);
+            return await stepContext.PromptAsync("birthdate", new PromptOptions { Prompt = MessageFactory.Text("Please enter your birthdate.") }, cancellationToken);
         }
 
         private async Task<DialogTurnResult> SummaryStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
