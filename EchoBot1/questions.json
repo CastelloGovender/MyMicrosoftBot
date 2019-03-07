@@ -1,8 +1,15 @@
 {
-  "Greetings": {
-    "1": "hello",
-    "2": "sup",
-    "3": "whats up"
-  },
-  "tester": "work"
+  "flowId": "getDetailsDialog",
+  "questions": [
+    {
+      "type": "Text",
+      "value": "Name",
+      "Text": "Hi my name is Baby bot, What is your name?"
+    },
+    {
+      "type": "DateTime",
+      "value": "Birthdate",
+      "Text": "Please enter your birthday"
+    }
+  ]
 }
