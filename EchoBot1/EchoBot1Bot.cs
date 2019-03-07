@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
@@ -9,6 +10,8 @@ using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace EchoBot1
 {
@@ -39,7 +42,7 @@ namespace EchoBot1
             _dialogs
                 .Add(new TextPrompt("echo"))
                 .Add(new TextPrompt("name"))
-                .Add(new NumberPrompt<int>("age"))
+                .Add(new DateTimePrompt("birthdate"))
                 .Add(new ConfirmPrompt("confirm"));
 
             //Root Dialog Flow
@@ -48,7 +51,7 @@ namespace EchoBot1
                 );
 
             //Get User Details Dialog  Flow
-            _dialogs.Add(new WaterfallDialog("getDetailsDialog")
+            _dialogs.Add(new WaterfallDialog("getUserDetails")
                 .AddStep(NameStepAsync)
                 .AddStep(NameConfirmStepAsync)
                 .AddStep(AgeStepAsync)
@@ -78,7 +81,7 @@ namespace EchoBot1
                 {
                     if (turnContext.Activity.Text.Equals("Hallo"))
                     {
-                        await dialogContext.BeginDialogAsync("getDetailsDialog", null, cancellationToken);
+                        await dialogContext.BeginDialogAsync("getUserDetails", null, cancellationToken);
                     }
                     else
                     {
@@ -119,20 +122,14 @@ namespace EchoBot1
 
         private async Task<DialogTurnResult> EchoStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            //var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
-
-            //// Update the profile.
-            //userProfile.RandomText = (string)stepContext.Result;
             return await stepContext.PromptAsync("echo", new PromptOptions { Prompt = MessageFactory.Text("You said") }, cancellationToken);
-            //await stepContext.Context.SendActivityAsync(MessageFactory.Text($"You said {stepContext.Result}"), cancellationToken);
-            // return await stepContext.PromptAsync("echo", new PromptOptions { Prompt = MessageFactory.Text($"You said {userProfile.RandomText}") }, cancellationToken);
         }
 
         private static async Task<DialogTurnResult> NameStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             // WaterfallStep always finishes with the end of the Waterfall or with another dialog; here it is a Prompt Dialog.
             // Running a prompt here means the next WaterfallStep will be run when the users response is received.
-            return await stepContext.PromptAsync("name", new PromptOptions { Prompt = MessageFactory.Text("Please enter your name.") }, cancellationToken);
+            return await stepContext.PromptAsync("name", new PromptOptions { Prompt = MessageFactory.Text("Hi my name is Baby bot, What is your name?") }, cancellationToken);
         }
 
         private async Task<DialogTurnResult> NameConfirmStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -147,7 +144,7 @@ namespace EchoBot1
             await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Thanks {stepContext.Result}."), cancellationToken);
 
             // WaterfallStep always finishes with the end of the Waterfall or with another dialog; here it is a Prompt Dialog.
-            return await stepContext.PromptAsync("confirm", new PromptOptions { Prompt = MessageFactory.Text("Would you like to give your age?") }, cancellationToken);
+            return await stepContext.PromptAsync("confirm", new PromptOptions { Prompt = MessageFactory.Text("Would you like to give your birthdate?") }, cancellationToken);
         }
 
         private async Task<DialogTurnResult> AgeStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -160,32 +157,39 @@ namespace EchoBot1
                 var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
 
                 // WaterfallStep always finishes with the end of the Waterfall or with another dialog, here it is a Prompt Dialog.
-                return await stepContext.PromptAsync("age", new PromptOptions { Prompt = MessageFactory.Text("Please enter your age.") }, cancellationToken);
+                return await stepContext.PromptAsync("birthdate", new PromptOptions { Prompt = MessageFactory.Text("Please enter your birthdate.") }, cancellationToken);
             }
             else
             {
                 // User said "no" so we will skip the next step. Give -1 as the age.
-                return await stepContext.NextAsync(-1, cancellationToken);
+                return await stepContext.NextAsync(default(DateTime), cancellationToken);
             }
         }
 
         private async Task<DialogTurnResult> ConfirmStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             // Get the current profile object from user state.
+
             var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
 
-            // Update the profile.
-            userProfile.Age = (int)stepContext.Result;
+            // Update the profile.;
+            //userProfile.Birthdate = Convert.ToDateTime((string)stepContext.Result);
+
+            //userProfile.Birthdate = Convert.ToDateTime((string)stepContext.Result);
 
             // We can send messages to the user at any point in the WaterfallStep.
-            if (userProfile.Age == -1)
+            var birthDate = (stepContext.Result as IList<DateTimeResolution>)?.FirstOrDefault();
+            var DateTimeBirthdate = Convert.ToDateTime(birthDate.Value ?? birthDate.Timex);
+            
+            if (DateTimeBirthdate == default(DateTime))
             {
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"No age given."), cancellationToken);
+                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"No birthdate given."), cancellationToken);
             }
             else
             {
-                // We can send messages to the user at any point in the WaterfallStep.
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"I have your age as {userProfile.Age}."), cancellationToken);
+                userProfile.Birthdate = DateTimeBirthdate;
+                // We can send messages to the user at any point in the WaterfallStep. userProfile.Birthdate.ToString("d", DateTimeFormatInfo.InvariantInfo)
+                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"I have your birthdate as {userProfile.Birthdate.ToString("yyyy/MM/dd")} ."), cancellationToken);
             }
 
             // WaterfallStep always finishes with the end of the Waterfall or with another dialog, here it is a Prompt Dialog.
@@ -200,13 +204,13 @@ namespace EchoBot1
                 var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
 
                 // We can send messages to the user at any point in the WaterfallStep.
-                if (userProfile.Age == -1)
+                if (userProfile.Birthdate.Equals(""))
                 {
                     await stepContext.Context.SendActivityAsync(MessageFactory.Text($"I have your name as {userProfile.Name}."), cancellationToken);
                 }
                 else
                 {
-                    await stepContext.Context.SendActivityAsync(MessageFactory.Text($"I have your name as {userProfile.Name} and age as {userProfile.Age}."), cancellationToken);
+                    await stepContext.Context.SendActivityAsync(MessageFactory.Text($"I have your name as {userProfile.Name} and birthdate as {userProfile.Birthdate}."), cancellationToken);
                 }
             }
             else
