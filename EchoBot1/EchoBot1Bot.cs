@@ -22,6 +22,7 @@ namespace EchoBot1
         private readonly EchoBot1Accessors _accessors;
         private readonly ILogger _logger;
         private DialogSet _dialogs;
+        private dynamic array;
 
         public EchoBot1Bot(EchoBot1Accessors accessors, ILoggerFactory loggerFactory)
         {
@@ -65,6 +66,12 @@ namespace EchoBot1
             {
                 throw new ArgumentNullException(nameof(turnContext));
             }
+            using (StreamReader read = new StreamReader("questions.json"))
+            {
+                string json = read.ReadToEnd();
+                dynamic questionArray = JsonConvert.DeserializeObject(json);
+                array = questionArray;
+            }
 
             if (turnContext.Activity.Type == ActivityTypes.Message)
             {
@@ -76,14 +83,8 @@ namespace EchoBot1
                 {
                     if (turnContext.Activity.Text.Equals("Hallo"))
                     {
-                        using (StreamReader read = new StreamReader("questions.json"))
-                        {
-                            string json = read.ReadToEnd();
-                            dynamic array = JsonConvert.DeserializeObject(json);
-                            string id = array.flowId;
-                            await dialogContext.BeginDialogAsync(id, null, cancellationToken);
-                        }
-                        
+                        string id = array.flowId;
+                        await dialogContext.BeginDialogAsync(id, null, cancellationToken);
                     }
                     else
                     {
@@ -127,16 +128,11 @@ namespace EchoBot1
             return await stepContext.PromptAsync("echo", new PromptOptions { Prompt = MessageFactory.Text("You said") }, cancellationToken);
         }
 
-        private static async Task<DialogTurnResult> NameStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        private async Task<DialogTurnResult> NameStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             //userProfile.Name = (string)stepContext.Result;
-            using (StreamReader read = new StreamReader("questions.json"))
-            {
-                string json = read.ReadToEnd();
-                dynamic array = JsonConvert.DeserializeObject(json);
-                string message = array.questions[0].Text;
-                return await stepContext.PromptAsync("name", new PromptOptions { Prompt = MessageFactory.Text(message) }, cancellationToken);
-            }
+            string message = array.questions[0].Text;
+            return await stepContext.PromptAsync("name", new PromptOptions { Prompt = MessageFactory.Text(message) }, cancellationToken);
             //return await stepContext.PromptAsync("name", new PromptOptions { Prompt = MessageFactory.Text("Hi my name is Baby bot, What is your name?") }, cancellationToken);
         }
 
@@ -144,18 +140,8 @@ namespace EchoBot1
         {
             var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
             userProfile.Name = (string)stepContext.Result;
-            using (StreamReader read = new StreamReader("questions.json"))
-            {
-                string json = read.ReadToEnd();
-                dynamic array = JsonConvert.DeserializeObject(json);
-                string message = array.questions[1].Text;
-                return await stepContext.PromptAsync("birthdate", new PromptOptions { Prompt = MessageFactory.Text(message) }, cancellationToken);
-            }
-            // Get the current profile object from user state.
-            //var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
-            //userProfile.Name = (string)stepContext.Result;
-            // WaterfallStep always finishes with the end of the Waterfall or with another dialog, here it is a Prompt Dialog.
-            //return await stepContext.PromptAsync("birthdate", new PromptOptions { Prompt = MessageFactory.Text("Please enter your birthdate.") }, cancellationToken);
+            string message = array.questions[1].Text;
+            return await stepContext.PromptAsync("birthdate", new PromptOptions { Prompt = MessageFactory.Text(message) }, cancellationToken);
         }
 
         private async Task<DialogTurnResult> SummaryStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -177,7 +163,6 @@ namespace EchoBot1
             {
                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Hi {userProfile.Name}, so you were born on {userProfile.Birthdate.ToString("dd/MM/yyyy")} and you are {years} years old."), cancellationToken);
             }
-
             // WaterfallStep always finishes with the end of the Waterfall or with another dialog, here it is the end.
             return await stepContext.EndDialogAsync(cancellationToken: cancellationToken);
         }
