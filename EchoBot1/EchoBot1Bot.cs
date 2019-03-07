@@ -134,17 +134,6 @@ namespace EchoBot1
             return await stepContext.PromptAsync("birthdate", new PromptOptions { Prompt = MessageFactory.Text("Please enter your birthdate.") }, cancellationToken);
         }
 
-        //private async Task<DialogTurnResult> AgeDeterminationStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
-        //{
-        //    var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
-        //    var resolution = (stepContext.Result as IList<DateTimeResolution>)?.FirstOrDefault();
-        //    DateTime date = Convert.ToDateTime(resolution.Value ?? resolution.Timex);
-        //    userProfile.Birthdate = date;
-            
-
-        //    return await stepContext.PromptAsync()
-        //}
-
         private async Task<DialogTurnResult> SummaryStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
