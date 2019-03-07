@@ -2,6 +2,7 @@
 // Licensed under the MIT License.
 
 using System;
+using System.Globalization;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Bot.Builder;
@@ -9,6 +10,8 @@ using Microsoft.Bot.Builder.Dialogs;
 using Microsoft.Bot.Schema;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using System.Linq;
+using System.Collections.Generic;
 
 namespace EchoBot1
 {
@@ -39,7 +42,7 @@ namespace EchoBot1
             _dialogs
                 .Add(new TextPrompt("echo"))
                 .Add(new TextPrompt("name"))
-                .Add(new TextPrompt("birthdate"))
+                .Add(new DateTimePrompt("birthdate"))
                 .Add(new ConfirmPrompt("confirm"));
 
             //Root Dialog Flow
@@ -119,13 +122,7 @@ namespace EchoBot1
 
         private async Task<DialogTurnResult> EchoStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
-            //var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
-
-            //// Update the profile.
-            //userProfile.RandomText = (string)stepContext.Result;
             return await stepContext.PromptAsync("echo", new PromptOptions { Prompt = MessageFactory.Text("You said") }, cancellationToken);
-            //await stepContext.Context.SendActivityAsync(MessageFactory.Text($"You said {stepContext.Result}"), cancellationToken);
-            // return await stepContext.PromptAsync("echo", new PromptOptions { Prompt = MessageFactory.Text($"You said {userProfile.RandomText}") }, cancellationToken);
         }
 
         private static async Task<DialogTurnResult> NameStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
@@ -165,28 +162,34 @@ namespace EchoBot1
             else
             {
                 // User said "no" so we will skip the next step. Give -1 as the age.
-                return await stepContext.NextAsync("", cancellationToken);
+                return await stepContext.NextAsync(default(DateTime), cancellationToken);
             }
         }
 
         private async Task<DialogTurnResult> ConfirmStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             // Get the current profile object from user state.
+
             var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
 
-            // Update the profile.
+            // Update the profile.;
+            //userProfile.Birthdate = Convert.ToDateTime((string)stepContext.Result);
 
-            userProfile.Birthdate = (string)stepContext.Result;
+            //userProfile.Birthdate = Convert.ToDateTime((string)stepContext.Result);
 
             // We can send messages to the user at any point in the WaterfallStep.
-            if (userProfile.Birthdate.Equals(""))
+            var birthDate = (stepContext.Result as IList<DateTimeResolution>)?.FirstOrDefault();
+            var DateTimeBirthdate = Convert.ToDateTime(birthDate.Value ?? birthDate.Timex);
+            
+            if (DateTimeBirthdate == default(DateTime))
             {
                 await stepContext.Context.SendActivityAsync(MessageFactory.Text($"No birthdate given."), cancellationToken);
             }
             else
             {
-                // We can send messages to the user at any point in the WaterfallStep.
-                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"I have your birthdate as {userProfile.Birthdate}."), cancellationToken);
+                userProfile.Birthdate = DateTimeBirthdate;
+                // We can send messages to the user at any point in the WaterfallStep. userProfile.Birthdate.ToString("d", DateTimeFormatInfo.InvariantInfo)
+                await stepContext.Context.SendActivityAsync(MessageFactory.Text($"I have your birthdate as {userProfile.Birthdate.ToString("yyyy/MM/dd")} ."), cancellationToken);
             }
 
             // WaterfallStep always finishes with the end of the Waterfall or with another dialog, here it is a Prompt Dialog.
