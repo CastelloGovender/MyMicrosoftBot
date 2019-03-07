@@ -134,12 +134,26 @@ namespace EchoBot1
             return await stepContext.PromptAsync("birthdate", new PromptOptions { Prompt = MessageFactory.Text("Please enter your birthdate.") }, cancellationToken);
         }
 
+        //private async Task<DialogTurnResult> AgeDeterminationStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
+        //{
+        //    var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
+        //    var resolution = (stepContext.Result as IList<DateTimeResolution>)?.FirstOrDefault();
+        //    DateTime date = Convert.ToDateTime(resolution.Value ?? resolution.Timex);
+        //    userProfile.Birthdate = date;
+            
+
+        //    return await stepContext.PromptAsync()
+        //}
+
         private async Task<DialogTurnResult> SummaryStepAsync(WaterfallStepContext stepContext, CancellationToken cancellationToken)
         {
             var userProfile = await _accessors.UserProfile.GetAsync(stepContext.Context, () => new UserProfile(), cancellationToken);
             var resolution = (stepContext.Result as IList<DateTimeResolution>)?.FirstOrDefault();
             DateTime date = Convert.ToDateTime(resolution.Value ?? resolution.Timex);
             userProfile.Birthdate = date;
+            string birthdateYear = userProfile.Birthdate.ToString("yyyy");
+            DateTime today = DateTime.Now;
+            int years = today.Year - Convert.ToInt32(birthdateYear);
 
             // We can send messages to the user at any point in the WaterfallStep.
             if (userProfile.Birthdate == null)
@@ -148,7 +162,7 @@ namespace EchoBot1
             }
             else
             {
-               await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Hi {userProfile.Name}, so you were born on {userProfile.Birthdate.ToString("dd/MM/yyyy")}."), cancellationToken);
+               await stepContext.Context.SendActivityAsync(MessageFactory.Text($"Hi {userProfile.Name}, so you were born on {userProfile.Birthdate.ToString("dd/MM/yyyy")} and you are {years} years old."), cancellationToken);
             }
 
             // WaterfallStep always finishes with the end of the Waterfall or with another dialog, here it is the end.
